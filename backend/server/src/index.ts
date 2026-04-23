@@ -28,17 +28,26 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 5001;
 
-// Validate environment variables at startup
-if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_PASSWORD || !process.env.DB_NAME) {
-  throw new Error("Missing required database environment variables in .env file");
+// Validate required environment variables at startup
+const DB_HOST = process.env.DB_HOST;
+const DB_USER = process.env.DB_USER;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+const DB_NAME = process.env.DB_NAME;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!DB_HOST || !DB_USER || !DB_PASSWORD || !DB_NAME) {
+  throw new Error("Missing required database environment variables (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME)");
+}
+if (!JWT_SECRET) {
+  throw new Error("Missing required JWT_SECRET environment variable");
 }
 
-// Define pool options with non-optional strings
+// Define pool options with validated strings
 const dbConfig: PoolOptions = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: DB_HOST,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
   port: Number(process.env.DB_PORT) || 3306,
 };
 
@@ -225,7 +234,7 @@ app.post("/api/signin", async (req: Request, res: Response) => {
     // ✅ Create JWT token
     const token = jwt.sign(
       { id: user.id, role: user.category, name: user.name },
-      process.env.JWT_SECRET!,
+      JWT_SECRET,
       { expiresIn: "2h" }
     );
 
@@ -251,10 +260,10 @@ app.get("/api/getStudentInfo", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing Authorization header" });
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1]!;
     if (!token) return res.status(401).json({ error: "Missing token" });
 
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     // ✅ Fetch user data from DB (except password)
     const [rows]: any = await pool.query(
@@ -277,10 +286,10 @@ app.put("/api/editProfile", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1]!;
     if (!token) return res.status(401).json({ error: "Missing token" });
 
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const {
       name,
@@ -331,10 +340,10 @@ app.put("/api/changePassword", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1]!;
     if (!token) return res.status(401).json({ error: "Missing token" });
 
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
@@ -377,10 +386,10 @@ app.delete("/api/deleteUser", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1]!;
     if (!token) return res.status(401).json({ error: "Missing token" });
 
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     // Delete user (cascade will handle related data)
     const [result]: any = await pool.query(
@@ -405,10 +414,10 @@ app.get("/api/getSmeInfo", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing Authorization header" });
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1]!;
     if (!token) return res.status(401).json({ error: "Missing token" });
 
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     // Fetch SME data from DB
     const [rows]: any = await pool.query(
@@ -433,10 +442,10 @@ app.get("/api/getCompanyInfo", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing Authorization header" });
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1]!;
     if (!token) return res.status(401).json({ error: "Missing token" });
 
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     // Fetch Company data from DB
     const [rows]: any = await pool.query(
@@ -465,8 +474,8 @@ app.post("/api/job-roles", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role.toLowerCase() !== "company") {
       return res.status(403).json({ error: "Access denied" });
@@ -514,8 +523,8 @@ app.get("/api/job-roles", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role.toLowerCase() !== "company") {
       return res.status(403).json({ error: "Access denied" });
@@ -545,8 +554,8 @@ app.get("/api/job-roles/hire-statuses", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [hires]: any = await pool.query(`
       SELECT chr.chr_id, chr.job_role_id, chr.student_id, chr.message, chr.contact_info,
@@ -593,8 +602,8 @@ app.get("/api/job-roles/:id", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [roles]: any = await pool.query(
       "SELECT * FROM job_roles WHERE jr_id = ? AND company_id = ?",
@@ -621,8 +630,8 @@ app.put("/api/job-roles/:id", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role.toLowerCase() !== "company") {
       return res.status(403).json({ error: "Access denied" });
@@ -673,8 +682,8 @@ app.delete("/api/job-roles/:id", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role.toLowerCase() !== "company") {
       return res.status(403).json({ error: "Access denied" });
@@ -706,8 +715,8 @@ app.get("/api/job-roles/:id/recommendations", async (req: Request, res: Response
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     // Get job role details
     const [roles]: any = await pool.query(
@@ -818,8 +827,8 @@ app.post("/api/job-roles/:id/send-hire-request", async (req: Request, res: Respo
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role.toLowerCase() !== "company") {
       return res.status(403).json({ error: "Access denied" });
@@ -861,8 +870,8 @@ app.get("/api/student/hire-requests", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [requests]: any = await pool.query(`
       SELECT chr.*, jr.role_name, jr.role_description, jr.skills_required, jr.job_type, 
@@ -894,8 +903,8 @@ app.post("/api/student/hire-requests/:id/accept", async (req: Request, res: Resp
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [result]: any = await pool.query(
       "UPDATE company_hire_requests SET status = 'accepted' WHERE chr_id = ? AND student_id = ?",
@@ -916,8 +925,8 @@ app.post("/api/student/hire-requests/:id/reject", async (req: Request, res: Resp
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [result]: any = await pool.query(
       "UPDATE company_hire_requests SET status = 'rejected' WHERE chr_id = ? AND student_id = ?",
@@ -939,13 +948,11 @@ app.post("/api/addProject", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1]!;
     if (!token) return res.status(401).json({ error: "Missing token" });
     console.log("AddProject:2");
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) throw new Error("JWT_SECRET not set");
     console.log("AddProject:3");
-    const decoded: any = jwt.verify(token, jwtSecret);
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     // const { name, department, acadamic_year } = req.body;
 
@@ -974,8 +981,8 @@ app.get("/api/getStudentSkills", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [rows]: any = await pool.query(
       "SELECT unverified_skills, verified_skills, updated_at FROM skills WHERE student_id = ?",
@@ -1015,8 +1022,8 @@ app.post("/api/addSkill", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { skill } = req.body;
 
     if (!skill || typeof skill !== "string") {
@@ -1069,8 +1076,8 @@ app.put("/api/verifySkill", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { skill } = req.body;
 
     if (!skill) {
@@ -1122,8 +1129,8 @@ app.delete("/api/removeSkill", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { skill, type } = req.body; // type: 'verified' or 'unverified'
 
     if (!skill || !type) {
@@ -1183,8 +1190,8 @@ app.post("/api/createTeam", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { teamName, memberCount, skillsRequired } = req.body;
 
     if (!teamName || !memberCount) {
@@ -1222,8 +1229,8 @@ app.get("/api/getMyTeams", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     // Fetch all teams where user is leader OR a member
     // JSON_CONTAINS is avoided here for MariaDB compatibility — filter in application layer
@@ -1248,8 +1255,8 @@ app.get("/api/getTeamDetails/:teamId", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { teamId } = req.params;
 
     const [rows]: any = await pool.query(
@@ -1294,8 +1301,8 @@ app.put("/api/updateTeam/:teamId", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { teamId } = req.params;
     const { teamName, memberCount } = req.body;
 
@@ -1331,8 +1338,8 @@ app.delete("/api/deleteTeam/:teamId", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { teamId } = req.params;
 
     // Verify user is team leader
@@ -1364,8 +1371,8 @@ app.put("/api/removeMember/:teamId/:studentId", async (req: Request, res: Respon
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { teamId, studentId } = req.params;
 
     // Verify user is team leader
@@ -1386,7 +1393,7 @@ app.put("/api/removeMember/:teamId/:studentId", async (req: Request, res: Respon
     let members = team[0].current_members || [];
     if (typeof members === "string") { try { members = JSON.parse(members); } catch { members = []; } }
     if (!Array.isArray(members)) members = [];
-    const updatedMembers = members.filter((m: any) => m.id !== parseInt(studentId));
+    const updatedMembers = members.filter((m: any) => m.id !== parseInt(studentId!));
 
     await pool.query(
       "UPDATE teams SET current_members = ? WHERE t_id = ?",
@@ -1406,8 +1413,8 @@ app.post("/api/leaveTeam/:teamId", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { teamId } = req.params;
 
     const [team]: any = await pool.query(
@@ -1495,8 +1502,8 @@ app.post("/api/requestJoinTeam/:teamId", async (req: Request, res: Response) => 
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { teamId } = req.params;
 
     // Check if team exists
@@ -1544,8 +1551,8 @@ app.get("/api/getTeamRequests/:teamId", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { teamId } = req.params;
 
     // Verify user is team leader
@@ -1583,8 +1590,8 @@ app.put("/api/approveRequest/:requestId", async (req: Request, res: Response) =>
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { requestId } = req.params;
 
     // Get request details
@@ -1653,8 +1660,8 @@ app.put("/api/rejectRequest/:requestId", async (req: Request, res: Response) => 
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     const { requestId } = req.params;
 
     // Get request details
@@ -1704,8 +1711,8 @@ app.get("/api/getTeamRecommendations", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     // Get student's verified skills
     const [skillsRow]: any = await pool.query(
@@ -1823,8 +1830,8 @@ app.get("/api/sme/profile", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role?.toLowerCase() !== "sme") {
       return res.status(403).json({ error: "Access denied" });
@@ -1851,8 +1858,8 @@ app.put("/api/sme/profile", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role?.toLowerCase() !== "sme") {
       return res.status(403).json({ error: "Access denied" });
@@ -1877,8 +1884,8 @@ app.delete("/api/sme/profile", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role?.toLowerCase() !== "sme") {
       return res.status(403).json({ error: "Access denied" });
@@ -1899,8 +1906,8 @@ app.post("/api/projects", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role?.toLowerCase() !== "sme") {
       return res.status(403).json({ error: "Access denied" });
@@ -1945,8 +1952,8 @@ app.get("/api/projects", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (decoded.role?.toLowerCase() !== "sme") {
       return res.status(403).json({ error: "Access denied" });
@@ -1981,8 +1988,8 @@ app.get("/api/projects/:id", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [projects]: any = await pool.query(
       `SELECT p.*, t.t_name as hired_team_name, t.t_skills_req as hired_team_skills, 
@@ -2015,8 +2022,8 @@ app.put("/api/projects/:id", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const {
       p_name,
@@ -2056,8 +2063,8 @@ app.delete("/api/projects/:id", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     await pool.query(
       "DELETE FROM projects WHERE p_id = ? AND sme_id = ?",
@@ -2077,8 +2084,8 @@ app.get("/api/projects/:id/recommendations", async (req: Request, res: Response)
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [projects]: any = await pool.query(
       "SELECT p_skills_req FROM projects WHERE p_id = ? AND sme_id = ?",
@@ -2132,8 +2139,8 @@ app.post("/api/projects/:id/send-request", async (req: Request, res: Response) =
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const { team_id, message, sme_contact } = req.body;
 
@@ -2160,8 +2167,8 @@ app.get("/api/teams/hiring-requests", async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [requests]: any = await pool.query(
       `SELECT hr.*, p.p_name, p.p_description, p.p_time_period, p.p_skills_req,
@@ -2192,8 +2199,8 @@ app.post("/api/teams/hiring-requests/:id/accept", async (req: Request, res: Resp
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [request]: any = await pool.query(
       `SELECT hr.*, t.team_leader_id FROM hiring_requests hr
@@ -2239,8 +2246,8 @@ app.post("/api/teams/hiring-requests/:id/reject", async (req: Request, res: Resp
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Missing token" });
 
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1]!;
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     const [request]: any = await pool.query(
       `SELECT hr.*, t.team_leader_id FROM hiring_requests hr

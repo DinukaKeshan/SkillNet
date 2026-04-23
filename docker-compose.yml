@@ -14,7 +14,7 @@ services:
       MYSQL_USER: skillnet
       MYSQL_PASSWORD: Skillnet@123
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - skillnet-db-data:/var/lib/mysql
       - ./db/docker-init.sql:/docker-entrypoint-initdb.d/01-init.sql

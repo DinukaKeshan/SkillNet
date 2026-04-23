@@ -551,7 +551,7 @@ export default function SmeDashboard() {
           ) : (
             <Grid container spacing={3}>
               {projects.map((project) => (
-                <Grid item xs={12} md={6} key={project.p_id}>
+                <Grid size={{ xs: 12, md: 6 }} key={project.p_id}>
                   <Card sx={{
                     height: "100%",
                     minHeight: 280,

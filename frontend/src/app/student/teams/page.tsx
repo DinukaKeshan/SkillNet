@@ -394,7 +394,7 @@ export default function TeamsPage() {
                                     {team.t_name}
                                 </Typography>
                                 <Chip
-                                    label={`${(team.similarity_score * 100).toFixed(0)}% Match`}
+                                    label={`${((team.similarity_score ?? 0) * 100).toFixed(0)}% Match`}
                                     size="small"
                                     color="success"
                                     icon={<Star />}
@@ -500,7 +500,7 @@ export default function TeamsPage() {
                         {myTeams.length > 0 ? (
                             <Grid container spacing={3}>
                                 {myTeams.map((team) => (
-                                    <Grid item xs={12} md={6} lg={4} key={team.t_id}>
+                                    <Grid size={{ xs: 12, md: 6, lg: 4 }} key={team.t_id}>
                                         {renderTeamCard(team)}
                                     </Grid>
                                 ))}
@@ -571,7 +571,7 @@ export default function TeamsPage() {
                                 </Typography>
                                 <Grid container spacing={3}>
                                     {searchResults.map((team) => (
-                                        <Grid item xs={12} md={6} lg={4} key={team.t_id}>
+                                        <Grid size={{ xs: 12, md: 6, lg: 4 }} key={team.t_id}>
                                             {renderTeamCard(team, true)}
                                         </Grid>
                                     ))}
@@ -596,7 +596,7 @@ export default function TeamsPage() {
                                     </Alert>
                                     <Grid container spacing={3}>
                                         {recommendations.map((team) => (
-                                            <Grid item xs={12} md={6} lg={4} key={team.t_id}>
+                                            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={team.t_id}>
                                                 {renderTeamCard(team, true)}
                                             </Grid>
                                         ))}
@@ -714,7 +714,7 @@ export default function TeamsPage() {
                                 {hiringRequests.map((request) => (
                                     <Card key={request.hr_id} sx={{ p: 3 }}>
                                         <Grid container spacing={3}>
-                                            <Grid item xs={12} md={8}>
+                                            <Grid size={{ xs: 12, md: 8 }}>
                                                 <Stack spacing={2}>
                                                     <Box>
                                                         <Typography variant="h6" fontWeight="bold">
@@ -773,7 +773,7 @@ export default function TeamsPage() {
                                                 </Stack>
                                             </Grid>
 
-                                            <Grid item xs={12} md={4}>
+                                            <Grid size={{ xs: 12, md: 4 }}>
                                                 <Stack spacing={2} height="100%" justifyContent="center">
                                                     {request.status === 'pending' ? (
                                                         <>
